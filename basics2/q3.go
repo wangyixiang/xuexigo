@@ -23,7 +23,7 @@ const (
 	FBI = FI * BI
 )
 
-func Q3() {
+func Q3_1() {
 	for i := 1; i <= 100; i++ {
 		if i%FBI == 0 {
 			fmt.Println(i, " ", FB)

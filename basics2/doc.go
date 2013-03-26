@@ -4,3 +4,7 @@
 basics2 document
 */
 package basics2
+
+func Silence() {
+
+}
