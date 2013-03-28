@@ -51,8 +51,9 @@ func Q23_1() {
 
 func Q23_2() {
 	fmt.Println(`
-	the receiver type is a *T, Go lang will firstly search the methods of *T,
-	if it absent, it will search methods of T. that's why push works as I know.
+	http://golang.org/ref/spec#Calls
+	The last paragraph of is section explained.
+	A method call x.m() is valid if the method set of (the type of) x contains m and the argument list can be assigned to the parameter list of m. If x is addressable and &x's method set contains m, x.m() is shorthand for (&x).m(): 
 	`)
 	k1 := list.List{}
 	k2 := &list.List{}
