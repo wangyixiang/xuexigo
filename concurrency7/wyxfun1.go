@@ -22,14 +22,15 @@ func catcher(sleep int) {
 func Wyxfun1_1() {
 	catchers := []int{0, 100, 10000}
 	wyxch1 = make(chan int)
-	wyxch2 = make(chan int, 30)
+	wyxch2 = make(chan int)
 	for _, value := range catchers {
 		go catcher(value)
 	}
-	for i := uint64(0); i <= 10000000; i++ {
+	for i := uint64(0); i <= 100000000; i++ {
 		wyxch1 <- 1
 	}
 	close(wyxch1)
 	<-wyxch2
-	time.Sleep(1000 * time.Millisecond)
+	<-wyxch2
+	<-wyxch2
 }
