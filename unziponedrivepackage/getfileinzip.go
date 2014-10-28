@@ -1,11 +1,14 @@
 package unziponedrivepackage
 
 import (
+	zip "archive/zip"
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -55,12 +58,112 @@ func getIndexMap(r io.Reader) (indexMap map[string]string, err error) {
 	return indexMap, err
 }
 
-func main() {
-	f, ok := os.Open("testdata" + string(os.PathSeparator) + indexFileName)
-	if ok == nil {
-		im, _ := getIndexMap(f)
-		fmt.Println(im)
+func UnzipPackageTo(packageName string, dstDirectory string, overWrite bool) error {
+	rc, err := zip.OpenReader(packageName)
+	dstDirectory = path.Clean(dstDirectory)
+	if err != nil {
+		return err
+	}
+	defer rc.Close()
+
+	_, err = os.Stat(dstDirectory)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err := os.MkdirAll(dstDirectory, 0755)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	} else {
-		log.Fatal(ok)
+		if dstDirectory != "." && !overWrite {
+			return errors.New(dstDirectory + " already exists.")
+		}
+	}
+
+	var nameMap map[string]string = nil
+
+	for _, f := range rc.File {
+		if f.Name == indexFileName {
+			r, err := f.Open()
+			if err != nil {
+				return err
+			}
+			defer r.Close()
+			nameMap, err = getIndexMap(r)
+			if err != nil {
+				return err
+			}
+			break
+		}
+	}
+
+	for _, f := range rc.File {
+		if f.Name == indexFileName {
+			continue
+		}
+		if f.Mode().IsDir() {
+			err := os.MkdirAll(dstDirectory+string(os.PathSeparator)+f.Name, 0755)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		if nameMap != nil {
+			if originalName, ok := nameMap[f.Name]; ok {
+				err := unzipFileFromPackage(f, dstDirectory+string(os.PathSeparator)+originalName)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+		}
+		unzipFileFromPackage(f, dstDirectory+string(os.PathSeparator)+f.Name)
+	}
+	return nil
+}
+
+func unzipFileFromPackage(f *zip.File, filename string) error {
+	writer, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer writer.Close()
+	reader, err := f.Open()
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+	if _, err := io.Copy(writer, reader); err != nil {
+		return err
+	}
+	fmt.Println("extract " + f.Name + " to " + filename)
+	return nil
+}
+
+func main() {
+	oneDriveFiles := []string{
+		"OneDrive-2014-07-05 (1).zip",
+		"OneDrive-2014-07-05 (2).zip",
+		"OneDrive-2014-07-05 (3).zip",
+		"OneDrive-2014-07-05 (4).zip",
+		"OneDrive-2014-07-05 (5).zip",
+		"OneDrive-2014-07-05.zip",
+		"OneDrive-2014-07-06 (1).zip",
+		"OneDrive-2014-07-06 (2).zip",
+		"OneDrive-2014-07-06 (3).zip",
+		"OneDrive-2014-07-06 (4).zip",
+		"OneDrive-2014-07-06 (5).zip",
+		"OneDrive-2014-07-06.zip",
+		"OneDrive-2014-07-07 (1).zip",
+		"OneDrive-2014-07-07 (2).zip",
+		"OneDrive-2014-07-07.zip"}
+	oneDriveDir := "/mnt/hgfs/E/Download"
+	for _, filename := range oneDriveFiles {
+		ok := UnzipPackageTo(path.Join(oneDriveDir, filename), path.Join(oneDriveDir, "oneDrive"), true)
+		if ok != nil {
+			log.Fatal(ok)
+		}
 	}
 }
