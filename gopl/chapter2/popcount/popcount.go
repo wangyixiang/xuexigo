@@ -8,6 +8,7 @@ func init() {
 	}
 }
 
+// 这个函数用来计算给定的一个uint64类型的数中的bit位为1的总个数是多少个
 func PopCount(x uint64) int {
 	return int(
 		pc[byte(x >> (0 * 8))] +
